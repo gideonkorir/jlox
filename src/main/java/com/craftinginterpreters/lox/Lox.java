@@ -8,6 +8,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 
+import com.craftinginterpreters.lox.visitors.AstPrinter;
+
 /**
  * Hello world!
  *
@@ -39,15 +41,30 @@ public class Lox
         if(hadError) { System.exit(65); }
     }
 
+    static enum RunMode {
+        PRINT_TOKENS,
+        PRINT_AST
+    }
+
     private static void runPrompt() throws IOException {
+        RunMode runMode = RunMode.PRINT_TOKENS;
         InputStreamReader input = new InputStreamReader(System.in);
         BufferedReader reader = new BufferedReader(input);
         for(;;) {
             System.out.print("> ");
             String line = reader.readLine();
             if(line == null) { break; }
-            run(line);
-            hadError = false;
+            if(line.compareToIgnoreCase("#printast") == 0) {
+                //enable print ast
+                runMode = RunMode.PRINT_AST;
+            } else {
+                if(runMode == RunMode.PRINT_TOKENS) {
+                    run(line);
+                } else if(runMode == RunMode.PRINT_AST) {
+                    printAst(line);
+                }
+                hadError = false;
+            }
         }
     }
 
@@ -57,6 +74,20 @@ public class Lox
         for(Token token : tokens) {
             System.out.println(token);
         }
+    }
+
+    private static void printAst(String source){
+        Scanner scanner = new Scanner(source);
+        List<Token> tokens = scanner.scanTokens();
+        Expr expression = new Expr.BinaryExpr(
+        new Expr.UnaryExpr(
+            new Token(TokenType.MINUS, "-", null, 1),
+            new Expr.LiteralExpr(123)),
+        new Token(TokenType.STAR, "*", null, 1),
+        new Expr.GroupingExpr(
+            new Expr.LiteralExpr(45.67)));
+
+        System.out.println(new AstPrinter().print(expression));
     }
 
     static void error(int line, String message) {
