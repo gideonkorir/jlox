@@ -104,6 +104,8 @@ public class Scanner {
                 if (match('/')) {
                     // read comment
                     readSingleLineComment();
+                } else if(match('*')) {
+                    readMultiLineComment();
                 } else {
                     addToken(SLASH);
                 }
@@ -185,6 +187,22 @@ public class Scanner {
     private void readSingleLineComment() {
         while (peek() != '\n' && !isAtEnd())
             advance();
+    }
+    
+
+    private void readMultiLineComment() {
+        while(!isAtEnd()) {
+            char c = peek();
+            if(c == '/' && peek(1) == '*'){
+                scanToken(); //nested multi-line comment
+            } else if(c == '*' && peek(1) == '/') {
+                advance(); //consume *
+                advance(); //consume /
+                break;
+            } else {
+                advance(); //consume the token
+            }
+        }
     }
 
     private void readStringLiteral() {

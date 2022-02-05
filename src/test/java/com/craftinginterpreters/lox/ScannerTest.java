@@ -107,6 +107,30 @@ public class ScannerTest
             );
     }
 
+    @Test
+    public void shouldConsumeMultiLineComment(){
+        Scanner s = new Scanner("if (a >= b) { print a; /*print \n a*/ } else { print b; /* print b */ }");
+        List<Token> tokens = s.scanTokens();
+        assertHasTokenTypes(tokens, IF, 
+            LEFT_PAREN, IDENTIFIER, GREATER_EQUAL, IDENTIFIER, RIGHT_PAREN, //(a >= b)
+            LEFT_BRACE, PRINT, IDENTIFIER, SEMICOLON, RIGHT_BRACE,
+            ELSE, 
+            LEFT_BRACE, PRINT, IDENTIFIER, SEMICOLON, RIGHT_BRACE
+            );
+    }
+
+    @Test
+    public void shouldConsumeNestedMultiLineComment() {
+    Scanner s = new Scanner("if (a >= b) { print a; /*print a /* not sure why */ */ } else { print b; }");
+        List<Token> tokens = s.scanTokens();
+        assertHasTokenTypes(tokens, IF, 
+            LEFT_PAREN, IDENTIFIER, GREATER_EQUAL, IDENTIFIER, RIGHT_PAREN, //(a >= b)
+            LEFT_BRACE, PRINT, IDENTIFIER, SEMICOLON, RIGHT_BRACE,
+            ELSE, 
+            LEFT_BRACE, PRINT, IDENTIFIER, SEMICOLON, RIGHT_BRACE
+            );
+    }
+
     private static void assertHasTokenTypes(List<Token> tokens, TokenType... expected){
         for(int i=0; i<expected.length; i++){
             assertEquals(expected[i], tokens.get(i).getType());
