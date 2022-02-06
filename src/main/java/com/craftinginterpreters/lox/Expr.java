@@ -13,7 +13,7 @@ public abstract class Expr {
     @Data
     @RequiredArgsConstructor
     @EqualsAndHashCode(callSuper = false)
-    public static class LiteralExpr extends Expr {
+    public static class Literal extends Expr {
         private final Object value;
 
         @Override
@@ -30,7 +30,7 @@ public abstract class Expr {
     @Data
     @RequiredArgsConstructor
     @EqualsAndHashCode(callSuper = false)
-    public static class UnaryExpr extends Expr {
+    public static class Unary extends Expr {
         private final Token operator;
         private final Expr operand;
 
@@ -48,7 +48,7 @@ public abstract class Expr {
     @Data
     @RequiredArgsConstructor
     @EqualsAndHashCode(callSuper = false)
-    public static class BinaryExpr extends Expr {
+    public static class Binary extends Expr {
         private final Expr left;
         private final Token operator;
         private final Expr right;
@@ -67,7 +67,7 @@ public abstract class Expr {
     @Data
     @RequiredArgsConstructor
     @EqualsAndHashCode(callSuper = false)
-    public static class GroupingExpr extends Expr {
+    public static class Grouping extends Expr {
         private final Expr expression;
 
         @Override

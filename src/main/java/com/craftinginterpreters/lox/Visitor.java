@@ -1,16 +1,16 @@
 package com.craftinginterpreters.lox;
 
-import com.craftinginterpreters.lox.Expr.BinaryExpr;
-import com.craftinginterpreters.lox.Expr.GroupingExpr;
-import com.craftinginterpreters.lox.Expr.LiteralExpr;
-import com.craftinginterpreters.lox.Expr.UnaryExpr;
+import com.craftinginterpreters.lox.Expr.Binary;
+import com.craftinginterpreters.lox.Expr.Grouping;
+import com.craftinginterpreters.lox.Expr.Literal;
+import com.craftinginterpreters.lox.Expr.Unary;
 
 public interface Visitor<R> {
-    R visitLiteralExpr(LiteralExpr expr);
+    R visitLiteralExpr(Literal expr);
 
-    R visitUnaryExpr(UnaryExpr expr);
+    R visitUnaryExpr(Unary expr);
 
-    R visitBinaryExpr(BinaryExpr expr);
+    R visitBinaryExpr(Binary expr);
 
-    R visitGroupingExpr(GroupingExpr expr);
+    R visitGroupingExpr(Grouping expr);
 }

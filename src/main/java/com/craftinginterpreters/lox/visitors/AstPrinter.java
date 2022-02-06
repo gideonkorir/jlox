@@ -1,9 +1,9 @@
 package com.craftinginterpreters.lox.visitors;
 
-import com.craftinginterpreters.lox.Expr.BinaryExpr;
-import com.craftinginterpreters.lox.Expr.GroupingExpr;
-import com.craftinginterpreters.lox.Expr.LiteralExpr;
-import com.craftinginterpreters.lox.Expr.UnaryExpr;
+import com.craftinginterpreters.lox.Expr.Binary;
+import com.craftinginterpreters.lox.Expr.Grouping;
+import com.craftinginterpreters.lox.Expr.Literal;
+import com.craftinginterpreters.lox.Expr.Unary;
 import com.craftinginterpreters.lox.Expr;
 import com.craftinginterpreters.lox.Visitor;
 
@@ -14,7 +14,7 @@ public class AstPrinter implements Visitor<String> {
     }
 
     @Override
-    public String visitLiteralExpr(LiteralExpr expr) {
+    public String visitLiteralExpr(Literal expr) {
         if(expr.getValue() == null) {
             return "nil";
         }
@@ -22,17 +22,17 @@ public class AstPrinter implements Visitor<String> {
     }
 
     @Override
-    public String visitUnaryExpr(UnaryExpr expr) {
+    public String visitUnaryExpr(Unary expr) {
         return parenthesize(expr.getOperator().getLexeme(), expr.getOperand());
     }
 
     @Override
-    public String visitBinaryExpr(BinaryExpr expr) {
+    public String visitBinaryExpr(Binary expr) {
         return parenthesize(expr.getOperator().getLexeme(), expr.getLeft(), expr.getRight());
     }
 
     @Override
-    public String visitGroupingExpr(GroupingExpr expr) {
+    public String visitGroupingExpr(Grouping expr) {
         return parenthesize("group", expr.getExpression());
     }
 
