@@ -79,13 +79,8 @@ public class Lox
     private static void printAst(String source){
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
-        Expr expression = new Expr.Binary(
-        new Expr.Unary(
-            new Token(TokenType.MINUS, "-", null, 1),
-            new Expr.Literal(123)),
-        new Token(TokenType.STAR, "*", null, 1),
-        new Expr.Grouping(
-            new Expr.Literal(45.67)));
+        Parser parser = new Parser(tokens);
+        Expr expression = parser.expression();
 
         System.out.println(new AstPrinter().print(expression));
     }
@@ -94,7 +89,7 @@ public class Lox
         report(line, "", message);
     }
 
-    private static void report(int line, String where, String message)
+    public static void report(int line, String where, String message)
     {
         System.err.println(
         "[line " + line + "] Error" + where + ": " + message);
