@@ -8,6 +8,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 
+import com.craftinginterpreters.lox.visitors.AstPrinter;
+
 /**
  * Hello world!
  *
@@ -39,15 +41,30 @@ public class Lox
         if(hadError) { System.exit(65); }
     }
 
+    static enum RunMode {
+        PRINT_TOKENS,
+        PRINT_AST
+    }
+
     private static void runPrompt() throws IOException {
+        RunMode runMode = RunMode.PRINT_TOKENS;
         InputStreamReader input = new InputStreamReader(System.in);
         BufferedReader reader = new BufferedReader(input);
         for(;;) {
             System.out.print("> ");
             String line = reader.readLine();
             if(line == null) { break; }
-            run(line);
-            hadError = false;
+            if(line.compareToIgnoreCase("#printast") == 0) {
+                //enable print ast
+                runMode = RunMode.PRINT_AST;
+            } else {
+                if(runMode == RunMode.PRINT_TOKENS) {
+                    run(line);
+                } else if(runMode == RunMode.PRINT_AST) {
+                    printAst(line);
+                }
+                hadError = false;
+            }
         }
     }
 
@@ -59,11 +76,20 @@ public class Lox
         }
     }
 
+    private static void printAst(String source){
+        Scanner scanner = new Scanner(source);
+        List<Token> tokens = scanner.scanTokens();
+        Parser parser = new Parser(tokens);
+        Expr expression = parser.expression();
+
+        System.out.println(new AstPrinter().print(expression));
+    }
+
     static void error(int line, String message) {
         report(line, "", message);
     }
 
-    private static void report(int line, String where, String message)
+    public static void report(int line, String where, String message)
     {
         System.err.println(
         "[line " + line + "] Error" + where + ": " + message);
