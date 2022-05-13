@@ -80,7 +80,7 @@ public class Lox
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
         Parser parser = new Parser(tokens);
-        Expr expression = parser.expression();
+        Expr expression = parser.parse();
 
         System.out.println(new AstPrinter().print(expression));
     }
