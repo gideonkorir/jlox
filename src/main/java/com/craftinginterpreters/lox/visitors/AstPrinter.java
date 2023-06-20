@@ -36,6 +36,11 @@ public class AstPrinter implements Visitor<String> {
         return parenthesize("group", expr.getExpression());
     }
 
+    @Override
+    public String visitTenaryExpr(Expr.Tenary expr){
+        return parenthesize("tenary", expr.getCondition(), expr.getIfCondition(), expr.getElseCondition());
+    }
+
     private String parenthesize(String name, Expr... exprs) {
         StringBuilder builder = new StringBuilder();
     

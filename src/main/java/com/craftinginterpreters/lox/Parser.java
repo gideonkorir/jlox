@@ -21,20 +21,44 @@ public class Parser {
         }
     }
 
-    private Expr expression() {
-        return equality();
+    private Expr expression() { return  comma(); }
+
+    private Expr comma() {
+        Expr left = equality();
+        while(match(COMMA)) {
+            Token operator = previous();
+            Expr right = equality();
+            left = new Expr.Binary(left, operator, right);
+        }
+        return  left;
     }
 
     private Expr equality() {
-        Expr left = comparison();
+        Expr left = tenary();
 
         while(match(BANG_EQUAL, EQUAL_EQUAL))
         {
             Token operator = previous();
-            Expr right = comparison();
+            Expr right = tenary();
             left = new Expr.Binary(left, operator, right);
         }
         return left;
+    }
+
+    private Expr tenary() {
+        Expr condition = comparison();
+
+        if(match(QUESTION_MARK)) {
+            Expr ifMatch = comparison();
+            if(match(FULL_COLON)){
+                Expr elseMatch = comparison();
+                return new Expr.Tenary(condition, ifMatch, elseMatch);
+            }
+            else {
+                throw error(previous(), "Expected token ':' for tenary operator");
+            }
+        }
+        return  condition;
     }
 
     private Expr comparison() {

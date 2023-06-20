@@ -80,4 +80,22 @@ public abstract class Expr {
             return visitor.visitGroupingExpr(this);
         }
     }
+
+    @Data
+    @RequiredArgsConstructor
+    @EqualsAndHashCode(callSuper = false)
+    public static class Tenary extends Expr {
+        private final Expr condition;
+        private final Expr ifCondition;
+        private final Expr elseCondition;
+        @Override
+        public ExprType getExprType() {
+            return ExprType.TENARY;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitTenaryExpr(this);
+        }
+    }
 }

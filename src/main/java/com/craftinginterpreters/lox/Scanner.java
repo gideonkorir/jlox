@@ -100,6 +100,12 @@ public class Scanner {
             case '>':
                 addToken(match('=') ? GREATER_EQUAL : GREATER);
                 break;
+            case '?':
+                addToken(QUESTION_MARK);
+                break;
+            case ':':
+                addToken(FULL_COLON);
+                break;
             case '/':
                 if (match('/')) {
                     // read comment
