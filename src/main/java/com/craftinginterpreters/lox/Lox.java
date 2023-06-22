@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import com.craftinginterpreters.lox.visitors.AstPrinter;
+import com.craftinginterpreters.lox.visitors.Interpreter;
 
 /**
  * Hello world!
@@ -17,6 +18,7 @@ import com.craftinginterpreters.lox.visitors.AstPrinter;
 public class Lox 
 {
     private static boolean hadError;
+    private static boolean hadRuntimeError;
 
     public static void main( String[] args ) throws IOException
     {
@@ -43,25 +45,31 @@ public class Lox
 
     static enum RunMode {
         PRINT_TOKENS,
-        PRINT_AST
+        PRINT_AST,
+        EVALUATE
     }
 
     private static void runPrompt() throws IOException {
-        RunMode runMode = RunMode.PRINT_TOKENS;
+        RunMode runMode = RunMode.EVALUATE;
         InputStreamReader input = new InputStreamReader(System.in);
         BufferedReader reader = new BufferedReader(input);
         for(;;) {
             System.out.print("> ");
             String line = reader.readLine();
             if(line == null) { break; }
+            if(line.length() == 0) { continue; }
             if(line.compareToIgnoreCase("#printast") == 0) {
                 //enable print ast
                 runMode = RunMode.PRINT_AST;
+            } else if(line.compareToIgnoreCase("#printtokens") == 0){
+                runMode = RunMode.PRINT_TOKENS;
             } else {
                 if(runMode == RunMode.PRINT_TOKENS) {
                     run(line);
                 } else if(runMode == RunMode.PRINT_AST) {
                     printAst(line);
+                } else if(runMode == RunMode.EVALUATE) {
+                    evaluate(line);
                 }
                 hadError = false;
             }
@@ -85,6 +93,15 @@ public class Lox
         System.out.println(new AstPrinter().print(expression));
     }
 
+    private static void evaluate(String source) {
+        Scanner scanner = new Scanner(source);
+        List<Token> tokens = scanner.scanTokens();
+        Parser parser = new Parser(tokens);
+        Expr expression = parser.parse();
+
+        new Interpreter().interpret(expression);
+    }
+
     static void error(int line, String message) {
         report(line, "", message);
     }
@@ -94,5 +111,11 @@ public class Lox
         System.err.println(
         "[line " + line + "] Error" + where + ": " + message);
         hadError = true;
+    }
+
+    public static void runtimeError(RuntimeError error) {
+        System.err.println(error.getMessage() +
+                "\n[line " + error.token.getLine() + "]");
+        hadRuntimeError = true;
     }
 }
