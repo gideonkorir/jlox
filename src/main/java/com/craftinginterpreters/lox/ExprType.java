@@ -4,5 +4,7 @@ public enum ExprType {
     LITERAL,
     UNARY,
     BINARY,
-    GROUPING
+    GROUPING,
+    VARIABLE,
+    ASSIGNMENT
 }

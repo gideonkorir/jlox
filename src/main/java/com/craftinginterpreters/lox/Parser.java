@@ -1,10 +1,11 @@
 package com.craftinginterpreters.lox;
 
+import java.util.ArrayList;
 import java.util.List;
 import static com.craftinginterpreters.lox.TokenType.*;
 
 public class Parser {
-    private List<Token> tokens;
+    private final List<Token> tokens;
     private int current = 0;
 
     public Parser(List<Token> tokens) {
@@ -12,17 +13,98 @@ public class Parser {
         this.tokens = tokens;
     }
 
-    public Expr parse() {
+    public List<Stmt> parse() {
+        List<Stmt> statements = new ArrayList<>();
         try {
-            return expression();
+            while(!isAtEnd()) {
+                statements.add(declaration());
+            }
+            return  statements;
         }
         catch(ParseError e) {
             return null;
         }
     }
 
+    private Stmt declaration() {
+        try{
+            if(match(VAR)){
+                return varDeclaration();
+            }
+            return  statement();
+        } catch (ParseError error){
+            synchronize();
+            return null;
+        }
+    }
+
+    private Stmt varDeclaration() {
+        Token name = consume(IDENTIFIER, "Expect variable name.");
+        Expr initializer = null;
+        if (match(EQUAL)) {
+            initializer = expression();
+        }
+
+        consume(SEMICOLON, "Expect ';' after variable declaration.");
+        return new Stmt.Var(name, initializer);
+    }
+
+    private Stmt statement(){
+        if(match(PRINT)) {
+            return printStatement();
+        } else if (match(LEFT_BRACE)){
+            return new Stmt.Block(block());
+        }
+        return  expressionStatement();
+    }
+
+    private Stmt printStatement() {
+        Expr value = expression();
+        consume(SEMICOLON, "Expect ';' after value.");
+        return new Stmt.Print(value);
+    }
+
+    private List<Stmt> block() {
+        List<Stmt> statements = new ArrayList<>();
+
+        while (!check(RIGHT_BRACE) && !isAtEnd()) {
+            statements.add(declaration());
+        }
+
+        consume(RIGHT_BRACE, "Expect '}' after block.");
+        return statements;
+    }
+
+    private Stmt expressionStatement() {
+        int eCurrent = current;
+        Expr expr = expression();
+        if(eCurrent == 0 && isAtEnd()){
+            return  new Stmt.Print(expr);
+        }
+        consume(SEMICOLON, "Expect ';' after expression.");
+        return new Stmt.Expression(expr);
+    }
+
     private Expr expression() {
-        return equality();
+        return assignment();
+    }
+
+    private Expr assignment() {
+        Expr expr = equality(); //if no = it will return the identifier
+
+        if (match(EQUAL)) {
+            Token equals = previous();
+            Expr value = assignment();
+
+            if (expr instanceof Expr.Variable) {
+                Token name = ((Expr.Variable)expr).getName();
+                return new Expr.Assignment(name, value);
+            }
+
+            throw error(equals, "Invalid assignment target.");
+        }
+
+        return expr;
     }
 
     private Expr equality() {
@@ -85,12 +167,15 @@ public class Parser {
             return new Expr.Literal(previous().getLiteral());
         }
 
+        if(match(IDENTIFIER)){
+            return  new Expr.Variable(previous());
+        }
         if(match(LEFT_PAREN)) {
-            Expr expr = parse();
+            Expr expr = expression();
             consume(RIGHT_PAREN, "Expected ')' after expression");
             return new Expr.Grouping(expr);
         }
-        throw new RuntimeException("Unknown unary type: " + peek().getType());
+        throw new RuntimeException("Unknown primary type: " + peek().getType());
     }
 
     private boolean isAtEnd() {
@@ -99,6 +184,14 @@ public class Parser {
 
     private Token peek() {
         return tokens.get(current);
+    }
+
+    private Token peek(int lookAhead) {
+        int next = current + lookAhead;
+        if(next >= tokens.size()){
+            return  null;
+        }
+        return  tokens.get(next);
     }
 
     private Token previous() {
@@ -132,16 +225,38 @@ public class Parser {
         return peek().getType() == tokenType;
     }
 
-    private void consume(TokenType tokenType, String errorMessage) {
+    private Token consume(TokenType tokenType, String errorMessage) {
         if(check(tokenType)) {
-            advance();
+            return advance();
         }
-        error(peek(), errorMessage);
+        throw error(peek(), errorMessage);
     }
 
     private ParseError error(Token token, String message) {
         reportError(token, message);
         return new ParseError();
+    }
+
+    private void synchronize() {
+        advance();
+
+        while (!isAtEnd()) {
+            if (previous().getType() == SEMICOLON) return;
+
+            switch (peek().getType()) {
+                case CLASS:
+                case FUN:
+                case VAR:
+                case FOR:
+                case IF:
+                case WHILE:
+                case PRINT:
+                case RETURN:
+                    return;
+            }
+
+            advance();
+        }
     }
 
     private static void reportError(Token token, String message) {
