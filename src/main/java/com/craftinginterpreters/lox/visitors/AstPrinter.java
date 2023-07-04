@@ -5,12 +5,34 @@ import com.craftinginterpreters.lox.Expr.Grouping;
 import com.craftinginterpreters.lox.Expr.Literal;
 import com.craftinginterpreters.lox.Expr.Unary;
 import com.craftinginterpreters.lox.Expr;
-import com.craftinginterpreters.lox.Visitor;
+import com.craftinginterpreters.lox.ExprVisitor;
+import com.craftinginterpreters.lox.Stmt;
+import com.craftinginterpreters.lox.StmtVisitor;
 
-public class AstPrinter implements Visitor<String> {
+public class AstPrinter implements ExprVisitor<String>, StmtVisitor<String> {
 
     public String print(Expr expr) {
         return expr.accept(this);
+    }
+
+    public String print(Stmt stmt) {
+        return stmt.accept(this);
+    }
+
+    @Override
+    public String visitExpressionStmt(Stmt.Expression statement) {
+        return print(statement.getExpression());
+    }
+
+    @Override
+    public String visitVarStmt(Stmt.Var statement) {
+        String val = statement.getExpression() == null ? "null" : print(statement.getExpression());
+        return  String.format("declare %s = %s", statement.getName().getLexeme(), val);
+    }
+
+    @Override
+    public String visitPrintStmt(Stmt.Print statement) {
+        return  "print: " + print(statement.getExpression());
     }
 
     @Override
@@ -27,6 +49,18 @@ public class AstPrinter implements Visitor<String> {
     }
 
     @Override
+    public String visitBlockStmt(Stmt.Block statement) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("{").append(System.lineSeparator());
+        for(Stmt stmt : statement.getStatements()){
+            builder.append(print(stmt));
+            builder.append(System.lineSeparator());
+        }
+        builder.append("}");
+        return  builder.toString();
+    }
+
+    @Override
     public String visitBinaryExpr(Binary expr) {
         return parenthesize(expr.getOperator().getLexeme(), expr.getLeft(), expr.getRight());
     }
@@ -34,6 +68,18 @@ public class AstPrinter implements Visitor<String> {
     @Override
     public String visitGroupingExpr(Grouping expr) {
         return parenthesize("group", expr.getExpression());
+    }
+
+    @Override
+    public String visitVariableExpr(Expr.Variable expr) {
+        return String.format("variable %s", expr.getName().getLexeme());
+    }
+
+    @Override
+    public String visitAssignmentExpr(Expr.Assignment expr) {
+        Expr value = expr.getExpression();
+        String v = value == null ? null : value.accept(this);
+        return String.format("%s = %s", expr.getIdentifier().getLexeme(), v);
     }
 
     private String parenthesize(String name, Expr... exprs) {

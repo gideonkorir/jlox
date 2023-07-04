@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.Statement;
 import java.util.List;
 
 import com.craftinginterpreters.lox.visitors.AstPrinter;
@@ -19,6 +20,8 @@ public class Lox
 {
     private static boolean hadError;
     private static boolean hadRuntimeError;
+
+    private final static Interpreter interpreter = new Interpreter();
 
     public static void main( String[] args ) throws IOException
     {
@@ -88,18 +91,23 @@ public class Lox
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
         Parser parser = new Parser(tokens);
-        Expr expression = parser.parse();
-
-        System.out.println(new AstPrinter().print(expression));
+        List<Stmt> statements = parser.parse();
+        AstPrinter printer = new AstPrinter();
+        for (Stmt s: statements) {
+            System.out.println(printer.print(s));
+        }
     }
 
     private static void evaluate(String source) {
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
         Parser parser = new Parser(tokens);
-        Expr expression = parser.parse();
+        List<Stmt> statements = parser.parse();
+        try {
+            interpreter.interpret(statements);
+        } catch (RuntimeError ignored) {
 
-        new Interpreter().interpret(expression);
+        }
     }
 
     static void error(int line, String message) {

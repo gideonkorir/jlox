@@ -8,7 +8,7 @@ public abstract class Expr {
     
     public abstract ExprType getExprType();
 
-    public abstract <R> R accept(Visitor<R> visitor);
+    public abstract <R> R accept(ExprVisitor<R> visitor);
 
     @Data
     @RequiredArgsConstructor
@@ -22,7 +22,7 @@ public abstract class Expr {
         }
 
         @Override
-        public <R> R accept(Visitor<R> visitor) {
+        public <R> R accept(ExprVisitor<R> visitor) {
             return visitor.visitLiteralExpr(this);
         }
     }
@@ -40,7 +40,7 @@ public abstract class Expr {
         }
 
         @Override
-        public <R> R accept(Visitor<R> visitor) {
+        public <R> R accept(ExprVisitor<R> visitor) {
             return visitor.visitUnaryExpr(this);
         }
     }
@@ -59,7 +59,7 @@ public abstract class Expr {
         }
 
         @Override
-        public <R> R accept(Visitor<R> visitor) {
+        public <R> R accept(ExprVisitor<R> visitor) {
             return visitor.visitBinaryExpr(this);
         }
     }
@@ -76,8 +76,43 @@ public abstract class Expr {
         }
 
         @Override
-        public <R> R accept(Visitor<R> visitor) {
+        public <R> R accept(ExprVisitor<R> visitor) {
             return visitor.visitGroupingExpr(this);
+        }
+    }
+
+    @Data
+    @RequiredArgsConstructor
+    @EqualsAndHashCode(callSuper = false)
+    public static class Variable extends Expr {
+        private final Token name;
+
+        @Override
+        public ExprType getExprType() {
+            return ExprType.VARIABLE;
+        }
+
+        @Override
+        public <R> R accept(ExprVisitor<R> visitor) {
+            return visitor.visitVariableExpr(this);
+        }
+    }
+
+    @Data
+    @RequiredArgsConstructor
+    @EqualsAndHashCode(callSuper = false)
+    public  static class Assignment extends  Expr {
+        private final Token identifier;
+        private final Expr expression;
+
+        @Override
+        public ExprType getExprType() {
+            return ExprType.ASSIGNMENT;
+        }
+
+        @Override
+        public <R> R accept(ExprVisitor<R> visitor) {
+            return visitor.visitAssignmentExpr(this);
         }
     }
 }
