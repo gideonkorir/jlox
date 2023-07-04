@@ -52,6 +52,8 @@ public class Parser {
     private Stmt statement(){
         if(match(PRINT)) {
             return printStatement();
+        } else if(match(IF)){
+            return ifStatement();
         } else if (match(LEFT_BRACE)){
             return new Stmt.Block(block());
         }
@@ -62,6 +64,18 @@ public class Parser {
         Expr value = expression();
         consume(SEMICOLON, "Expect ';' after value.");
         return new Stmt.Print(value);
+    }
+
+    private Stmt ifStatement() {
+        consume(LEFT_PAREN, "Expected '(' after if.");
+        Expr condition = expression();
+        consume(RIGHT_PAREN, "Expected ')' after if condition.");
+        Stmt thenBranch = statement();
+        Stmt elseBranch = null;
+        if(match(ELSE)){
+            elseBranch = statement();
+        }
+        return new Stmt.If(condition, thenBranch, elseBranch);
     }
 
     private List<Stmt> block() {

@@ -60,4 +60,21 @@ public abstract class Stmt {
             return visitor.visitBlockStmt(this);
         }
     }
+
+    @Data
+    @RequiredArgsConstructor
+    @EqualsAndHashCode(callSuper = false)
+    public static class If extends Stmt {
+        @Getter
+        private final Expr condition;
+        @Getter
+        private final Stmt thenStmt;
+        @Getter
+        private final Stmt elseStmt;
+
+        @Override
+        public <T> T accept(StmtVisitor<T> visitor) {
+            return visitor.visitIfStmt(this);
+        }
+    }
 }

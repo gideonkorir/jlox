@@ -61,6 +61,24 @@ public class AstPrinter implements ExprVisitor<String>, StmtVisitor<String> {
     }
 
     @Override
+    public String visitIfStmt(Stmt.If stmt) {
+        if(stmt.getElseStmt() != null) {
+            return  String.format("if (%s)  %s else %s",
+                    print(stmt.getCondition()),
+                    print(stmt.getThenStmt()),
+                    print(stmt.getElseStmt())
+            );
+        } else {
+            return  String.format("if (%s)  %s",
+                    print(stmt.getCondition()),
+                    print(stmt.getThenStmt())
+            );
+        }
+    }
+
+
+
+    @Override
     public String visitBinaryExpr(Binary expr) {
         return parenthesize(expr.getOperator().getLexeme(), expr.getLeft(), expr.getRight());
     }

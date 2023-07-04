@@ -50,6 +50,16 @@ public class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
         return null;
     }
 
+    public Void visitIfStmt(Stmt.If stmt){
+        Object cond = evaluate(stmt.getCondition());
+        if(isTruthy(cond)){
+            execute(stmt.getThenStmt());
+        } else if(stmt.getElseStmt() != null) {
+            execute(stmt.getElseStmt());
+        }
+        return  null;
+    }
+
     private void executeBlock(List<Stmt> statements,
                               Environment environment) {
         Environment previous = this.environment;
