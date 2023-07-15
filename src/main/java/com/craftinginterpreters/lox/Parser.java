@@ -1,6 +1,7 @@
 package com.craftinginterpreters.lox;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import static com.craftinginterpreters.lox.TokenType.*;
 
@@ -54,8 +55,16 @@ public class Parser {
             return printStatement();
         } else if(match(IF)){
             return ifStatement();
-        } else if (match(LEFT_BRACE)){
+        } else if (match(WHILE)) {
+            return whileStatement();
+        } else if (match(FOR)) {
+            return  forStatement();
+        }else if (match(LEFT_BRACE)){
             return new Stmt.Block(block());
+        } else if (match(CONTINUE)) {
+            return continueStmt();
+        } else if (match(BREAK)) {
+            return breakStmt();
         }
         return  expressionStatement();
     }
@@ -76,6 +85,72 @@ public class Parser {
             elseBranch = statement();
         }
         return new Stmt.If(condition, thenBranch, elseBranch);
+    }
+
+    private Stmt whileStatement() {
+        consume(LEFT_PAREN, "expected '(' for while statement condition.");
+        Expr condition = expression();
+        consume(RIGHT_PAREN, "Expected ')' for while statement condition");
+        Stmt body = statement();
+        return  new Stmt.While(condition, body);
+    }
+
+    private Stmt forStatement() {
+        consume(LEFT_PAREN, "Expected '(' after for keyword");
+        Stmt initializer;
+        if(match(VAR)) {
+            initializer = varDeclaration();
+        } else if(match(SEMICOLON)){
+            initializer = null;
+        } else {
+            initializer = expressionStatement();
+        }
+
+        //the semicolon is already consumed at this point
+        Expr condition = null;
+        if(!check(SEMICOLON)) {
+            condition = expression();
+        }
+        consume(SEMICOLON, "Expected ';' after loop condition");
+
+        Expr increment = null;
+        if(!check(RIGHT_PAREN)) {
+            increment = expression();
+        }
+        consume(RIGHT_PAREN, "Expected ')' after for clause");
+        Stmt body = statement();
+
+        //desugaring
+        if (increment != null) {
+            //if the increment isn't null then include the increment to the end
+            //of the iteration body i.e., the increment is done after an execution of the body.
+            body = new Stmt.Block(
+                    Arrays.asList(
+                            body,
+                            new Stmt.Expression(increment)));
+        }
+        if (condition == null) {
+            //No condition means true
+            condition = new Expr.Literal(true);
+        }
+        body = new Stmt.While(condition, body);
+
+        if (initializer != null) {
+            //if the initializer exists then add it as a statement before
+            //the while loop.
+            body = new Stmt.Block(Arrays.asList(initializer, body));
+        }
+        return  body;
+    }
+
+    private Stmt continueStmt(){
+        consume(SEMICOLON, "Semicolon required after continue statement");
+        return new Stmt.Keyword(CONTINUE);
+    }
+
+    private Stmt breakStmt() {
+        consume(SEMICOLON, "Semicolon required after break statement");
+        return  new Stmt.Keyword(BREAK);
     }
 
     private List<Stmt> block() {
@@ -104,7 +179,7 @@ public class Parser {
     }
 
     private Expr assignment() {
-        Expr expr = equality(); //if no = it will return the identifier
+        Expr expr = logicOr(); //if no = it will return the identifier
 
         if (match(EQUAL)) {
             Token equals = previous();
@@ -119,6 +194,24 @@ public class Parser {
         }
 
         return expr;
+    }
+
+    private Expr logicOr() {
+        Expr left = logicAnd();
+        if(match(OR)) {
+            Expr right = logicAnd();
+            left = new Expr.Logical(left, OR, right);
+        }
+        return  left;
+    }
+
+    private Expr logicAnd() {
+        Expr left = equality();
+        if(match(AND)){
+            Expr right = equality();
+            left = new Expr.Logical(left, AND, right);
+        }
+        return  left;
     }
 
     private Expr equality() {

@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Objects;
 
 public class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
-
     private Environment environment = new Environment();
+    private LoopState loopState = LoopState.None;
     public void interpret(List<Stmt> statements) {
         try {
             for (Stmt statement : statements) {
@@ -65,9 +65,11 @@ public class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
         Environment previous = this.environment;
         try {
             this.environment = environment;
-
             for (Stmt statement : statements) {
                 execute(statement);
+                if(loopState != LoopState.None) {
+                    break;
+                }
             }
         } finally {
             this.environment = previous;
@@ -177,6 +179,50 @@ public class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
         return value;
     }
 
+    @Override
+    public Object visitLogicalExpr(Expr.Logical expr) {
+        Object value = evaluate(expr.getLeft());
+        if(isTruthy(value)) {
+            if(expr.getOperator() == TokenType.OR) {
+                return  true; //short circuit the OR operator
+            } else {
+                return  isTruthy(evaluate(expr.getRight()));
+            }
+        } else {
+            if(expr.getOperator() == TokenType.OR) {
+                return  isTruthy(evaluate(expr.getRight())); //evaluate right of OR
+            } else {
+                return  false;
+            }
+        }
+    }
+
+    @Override
+    public Void visitWhileStmt(Stmt.While statement) {
+        Object result = evaluate(statement.getCondition());
+
+        while(isTruthy(result)){
+            execute(statement.getBody());
+            LoopState current = loopState;
+            loopState = LoopState.None;
+            if(current == LoopState.Break) {
+                break;
+            }
+            result = evaluate(statement.getCondition());
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitKeywordStmt(Stmt.Keyword statement) {
+        if(statement.getKeyword() == TokenType.BREAK) {
+            loopState = LoopState.Break;
+        } else if(statement.getKeyword() == TokenType.CONTINUE) {
+            loopState = LoopState.Continue;
+        }
+        return null;
+    }
+
     private static boolean isEqual(Object a, Object b) {
         if (a == null && b == null) return true;
         if (a == null) return false;
@@ -201,5 +247,11 @@ public class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
         }
 
         return object.toString();
+    }
+
+    private static enum LoopState {
+        None,
+        Break,
+        Continue
     }
 }

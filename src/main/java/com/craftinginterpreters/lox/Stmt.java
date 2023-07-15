@@ -77,4 +77,29 @@ public abstract class Stmt {
             return visitor.visitIfStmt(this);
         }
     }
+
+    @Data
+    @RequiredArgsConstructor
+    @EqualsAndHashCode(callSuper = false)
+    public static class While extends  Stmt {
+        private final Expr condition;
+        private final Stmt body;
+
+        @Override
+        public <T> T accept(StmtVisitor<T> visitor) {
+            return  visitor.visitWhileStmt(this);
+        }
+    }
+
+    @Data
+    @RequiredArgsConstructor
+    @EqualsAndHashCode(callSuper = false)
+    public static class Keyword extends  Stmt {
+        private final TokenType keyword;
+
+        @Override
+        public <T> T accept(StmtVisitor<T> visitor) {
+            return  visitor.visitKeywordStmt(this);
+        }
+    }
 }

@@ -6,4 +6,6 @@ public interface StmtVisitor<T> {
     T visitVarStmt(Stmt.Var statement);
     T visitBlockStmt(Stmt.Block statement);
     T visitIfStmt(Stmt.If statement);
+    T visitWhileStmt(Stmt.While statement);
+    T visitKeywordStmt(Stmt.Keyword statement);
 }

@@ -76,7 +76,16 @@ public class AstPrinter implements ExprVisitor<String>, StmtVisitor<String> {
         }
     }
 
+    @Override
+    public String visitWhileStmt(Stmt.While statement) {
+        String body = statement.getBody().accept(this);
+        return  String.format("while (%s) %s", statement.getCondition(), body);
+    }
 
+    @Override
+    public String visitKeywordStmt(Stmt.Keyword statement) {
+        return statement.getKeyword().name();
+    }
 
     @Override
     public String visitBinaryExpr(Binary expr) {
@@ -98,6 +107,15 @@ public class AstPrinter implements ExprVisitor<String>, StmtVisitor<String> {
         Expr value = expr.getExpression();
         String v = value == null ? null : value.accept(this);
         return String.format("%s = %s", expr.getIdentifier().getLexeme(), v);
+    }
+
+    @Override
+    public String visitLogicalExpr(Expr.Logical expr) {
+        return  parenthesize(
+                expr.getOperator().toString(),
+                expr.getLeft(),
+                expr.getRight()
+                );
     }
 
     private String parenthesize(String name, Expr... exprs) {

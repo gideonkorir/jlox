@@ -115,4 +115,23 @@ public abstract class Expr {
             return visitor.visitAssignmentExpr(this);
         }
     }
+
+    @Data
+    @RequiredArgsConstructor
+    @EqualsAndHashCode(callSuper = false)
+    public  static class Logical extends  Expr {
+        private final Expr left;
+        private final TokenType operator;
+        private final Expr right;
+
+        @Override
+        public ExprType getExprType() {
+            return ExprType.LOGICAL;
+        }
+
+        @Override
+        public <R> R accept(ExprVisitor<R> visitor) {
+            return visitor.visitLogicalExpr(this);
+        }
+    }
 }
