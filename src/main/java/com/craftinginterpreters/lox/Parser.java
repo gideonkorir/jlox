@@ -1,12 +1,15 @@
 package com.craftinginterpreters.lox;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import static com.craftinginterpreters.lox.TokenType.*;
 
 public class Parser {
     private final List<Token> tokens;
     private int current = 0;
+
+    private ParseContext parseContext =  ParseContext.DEFAULT;
 
     public Parser(List<Token> tokens) {
         super();
@@ -52,8 +55,18 @@ public class Parser {
     private Stmt statement(){
         if(match(PRINT)) {
             return printStatement();
-        } else if (match(LEFT_BRACE)){
+        } else if(match(IF)){
+            return ifStatement();
+        } else if (match(WHILE)) {
+            return whileStatement();
+        } else if (match(FOR)) {
+            return  forStatement();
+        }else if (match(LEFT_BRACE)){
             return new Stmt.Block(block());
+        } else if (match(CONTINUE)) {
+            return continueStmt();
+        } else if (match(BREAK)) {
+            return breakStmt();
         }
         return  expressionStatement();
     }
@@ -62,6 +75,99 @@ public class Parser {
         Expr value = expression();
         consume(SEMICOLON, "Expect ';' after value.");
         return new Stmt.Print(value);
+    }
+
+    private Stmt ifStatement() {
+        consume(LEFT_PAREN, "Expected '(' after if.");
+        Expr condition = expression();
+        consume(RIGHT_PAREN, "Expected ')' after if condition.");
+        Stmt thenBranch = statement();
+        Stmt elseBranch = null;
+        if(match(ELSE)){
+            elseBranch = statement();
+        }
+        return new Stmt.If(condition, thenBranch, elseBranch);
+    }
+
+    private Stmt whileStatement() {
+        consume(LEFT_PAREN, "expected '(' for while statement condition.");
+        Expr condition = expression();
+        consume(RIGHT_PAREN, "Expected ')' for while statement condition");
+        parseContext = ParseContext.LOOP_BODY;
+        Stmt body = statement();
+        parseContext = ParseContext.DEFAULT;
+        return  new Stmt.While(condition, body);
+    }
+
+    private Stmt forStatement() {
+        consume(LEFT_PAREN, "Expected '(' after for keyword");
+        Stmt initializer;
+        if(match(VAR)) {
+            initializer = varDeclaration();
+        } else if(match(SEMICOLON)){
+            initializer = null;
+        } else {
+            initializer = expressionStatement();
+        }
+
+        //the semicolon is already consumed at this point
+        Expr condition = null;
+        if(!check(SEMICOLON)) {
+            condition = expression();
+        }
+        consume(SEMICOLON, "Expected ';' after loop condition");
+
+        Expr increment = null;
+        if(!check(RIGHT_PAREN)) {
+            increment = expression();
+        }
+        consume(RIGHT_PAREN, "Expected ')' after for clause");
+        parseContext = ParseContext.LOOP_BODY;
+        Stmt body = statement();
+        parseContext = ParseContext.DEFAULT;
+        return new Stmt.For(initializer, condition, increment, body);
+
+        /* Note: Decided against de sugaring for now so that I can implement continue on the for loop
+        // When I desugar, I can't find a good way to implement the continue statement, I need the increment
+        // to always be executed otherwise the loop just hangs because the loop variable isn't updated.
+        // I checked: https://stackoverflow.com/questions/14386679/how-to-use-the-statement-continue-in-while-loop#:~:text=Do%20your%20increment%20at%20the%20beginning%20instead%20of,or%20this%20doesn%27t%20really%20make%20much%20sense%20%7D
+        //desugaring
+        if (increment != null) {
+            //if the increment isn't null then include the increment to the end
+            //of the iteration body i.e., the increment is done after an execution of the body.
+            body = new Stmt.Block(
+                    Arrays.asList(
+                            body,
+                            new Stmt.Expression(increment)));
+        }
+        if (condition == null) {
+            //No condition means true
+            condition = new Expr.Literal(true);
+        }
+        body = new Stmt.While(condition, body);
+
+        if (initializer != null) {
+            //if the initializer exists then add it as a statement before
+            //the while loop.
+            body = new Stmt.Block(Arrays.asList(initializer, body));
+        }
+        return  body;*/
+    }
+
+    private Stmt continueStmt(){
+        if(parseContext != ParseContext.LOOP_BODY) {
+            throw error(previous(), "The continue keyword is only allowed in the context of a loop");
+        }
+        consume(SEMICOLON, "Semicolon required after continue statement");
+        return new Stmt.Keyword(CONTINUE);
+    }
+
+    private Stmt breakStmt() {
+        if(parseContext != ParseContext.LOOP_BODY) {
+            throw error(previous(), "The break keyword is only allowed in the context of a loop");
+        }
+        consume(SEMICOLON, "Semicolon required after break statement");
+        return  new Stmt.Keyword(BREAK);
     }
 
     private List<Stmt> block() {
@@ -90,7 +196,7 @@ public class Parser {
     }
 
     private Expr assignment() {
-        Expr expr = equality(); //if no = it will return the identifier
+        Expr expr = logicOr(); //if no = it will return the identifier
 
         if (match(EQUAL)) {
             Token equals = previous();
@@ -105,6 +211,24 @@ public class Parser {
         }
 
         return expr;
+    }
+
+    private Expr logicOr() {
+        Expr left = logicAnd();
+        if(match(OR)) {
+            Expr right = logicAnd();
+            left = new Expr.Logical(left, OR, right);
+        }
+        return  left;
+    }
+
+    private Expr logicAnd() {
+        Expr left = equality();
+        if(match(AND)){
+            Expr right = equality();
+            left = new Expr.Logical(left, AND, right);
+        }
+        return  left;
     }
 
     private Expr equality() {
@@ -268,4 +392,9 @@ public class Parser {
     }
 
     private static class ParseError extends RuntimeException {}
+
+    private static enum ParseContext{
+        DEFAULT,
+        LOOP_BODY
+    }
 }

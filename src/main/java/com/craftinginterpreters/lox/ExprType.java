@@ -6,5 +6,6 @@ public enum ExprType {
     BINARY,
     GROUPING,
     VARIABLE,
-    ASSIGNMENT
+    ASSIGNMENT,
+    LOGICAL
 }

@@ -60,4 +60,61 @@ public abstract class Stmt {
             return visitor.visitBlockStmt(this);
         }
     }
+
+    @Data
+    @RequiredArgsConstructor
+    @EqualsAndHashCode(callSuper = false)
+    public static class If extends Stmt {
+        @Getter
+        private final Expr condition;
+        @Getter
+        private final Stmt thenStmt;
+        @Getter
+        private final Stmt elseStmt;
+
+        @Override
+        public <T> T accept(StmtVisitor<T> visitor) {
+            return visitor.visitIfStmt(this);
+        }
+    }
+
+    @Data
+    @RequiredArgsConstructor
+    @EqualsAndHashCode(callSuper = false)
+    public static class While extends  Stmt {
+        private final Expr condition;
+        private final Stmt body;
+
+        @Override
+        public <T> T accept(StmtVisitor<T> visitor) {
+            return  visitor.visitWhileStmt(this);
+        }
+    }
+
+    @Data
+    @RequiredArgsConstructor
+    @EqualsAndHashCode(callSuper = false)
+    public static class Keyword extends  Stmt {
+        private final TokenType keyword;
+
+        @Override
+        public <T> T accept(StmtVisitor<T> visitor) {
+            return  visitor.visitKeywordStmt(this);
+        }
+    }
+
+    @Data
+    @RequiredArgsConstructor
+    @EqualsAndHashCode(callSuper = false)
+    public static class For extends  Stmt {
+        private final Stmt initializer;
+        private final Expr condition;
+        private final Expr increment;
+        private final Stmt body;
+
+        @Override
+        public <T> T accept(StmtVisitor<T> visitor) {
+            return  visitor.visitForStmt(this);
+        }
+    }
 }

@@ -61,6 +61,53 @@ public class AstPrinter implements ExprVisitor<String>, StmtVisitor<String> {
     }
 
     @Override
+    public String visitIfStmt(Stmt.If stmt) {
+        if(stmt.getElseStmt() != null) {
+            return  String.format("if (%s)  %s else %s",
+                    print(stmt.getCondition()),
+                    print(stmt.getThenStmt()),
+                    print(stmt.getElseStmt())
+            );
+        } else {
+            return  String.format("if (%s)  %s",
+                    print(stmt.getCondition()),
+                    print(stmt.getThenStmt())
+            );
+        }
+    }
+
+    @Override
+    public String visitWhileStmt(Stmt.While statement) {
+        String body = statement.getBody().accept(this);
+        return  String.format("while (%s) %s", statement.getCondition(), body);
+    }
+
+    @Override
+    public String visitForStmt(Stmt.For statement) {
+        String init = statement.getInitializer() == null
+                ? ""
+                : statement.getInitializer().accept(this);
+        String cond = statement.getCondition() == null
+                ? ""
+                : statement.getCondition().accept(this);
+        String incr = statement.getIncrement() == null
+                ? ""
+                : statement.getIncrement().accept(this);
+        String body = statement.getBody().accept(this);
+        return String.format("for(%s; %s; %s){ %s }",
+                init,
+                cond,
+                incr,
+                body
+        );
+    }
+
+    @Override
+    public String visitKeywordStmt(Stmt.Keyword statement) {
+        return statement.getKeyword().name();
+    }
+
+    @Override
     public String visitBinaryExpr(Binary expr) {
         return parenthesize(expr.getOperator().getLexeme(), expr.getLeft(), expr.getRight());
     }
@@ -80,6 +127,15 @@ public class AstPrinter implements ExprVisitor<String>, StmtVisitor<String> {
         Expr value = expr.getExpression();
         String v = value == null ? null : value.accept(this);
         return String.format("%s = %s", expr.getIdentifier().getLexeme(), v);
+    }
+
+    @Override
+    public String visitLogicalExpr(Expr.Logical expr) {
+        return  parenthesize(
+                expr.getOperator().toString(),
+                expr.getLeft(),
+                expr.getRight()
+                );
     }
 
     private String parenthesize(String name, Expr... exprs) {
