@@ -102,4 +102,19 @@ public abstract class Stmt {
             return  visitor.visitKeywordStmt(this);
         }
     }
+
+    @Data
+    @RequiredArgsConstructor
+    @EqualsAndHashCode(callSuper = false)
+    public static class For extends  Stmt {
+        private final Stmt initializer;
+        private final Expr condition;
+        private final Expr increment;
+        private final Stmt body;
+
+        @Override
+        public <T> T accept(StmtVisitor<T> visitor) {
+            return  visitor.visitForStmt(this);
+        }
+    }
 }

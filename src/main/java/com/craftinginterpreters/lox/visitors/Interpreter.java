@@ -116,8 +116,7 @@ public class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
         return null;
     }
 
-    private static boolean isTruthy(Object object) {
-        if (object == null) return false;
+    private static boolean isTruthy(Object object) {;if (object == null) return false;
         if (object instanceof Boolean) return (boolean)object;
         return true;
     }
@@ -199,16 +198,42 @@ public class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
 
     @Override
     public Void visitWhileStmt(Stmt.While statement) {
-        Object result = evaluate(statement.getCondition());
+        return  Loop(
+                null,
+                statement.getCondition(),
+                null,
+                statement.getBody()
+        );
+    }
+
+    @Override
+    public Void visitForStmt(Stmt.For statement) {
+        return  Loop(
+                statement.getInitializer(),
+                statement.getCondition() == null ? new Expr.Literal(true) : statement.getCondition(),
+                statement.getIncrement(),
+                statement.getBody()
+                );
+    }
+
+    Void Loop(Stmt initializer, Expr condition, Expr increment, Stmt body){
+        if(initializer != null){
+            execute(initializer);
+        }
+
+        Object result = evaluate(condition);
 
         while(isTruthy(result)){
-            execute(statement.getBody());
+            execute(body);
             LoopState current = loopState;
             loopState = LoopState.None;
             if(current == LoopState.Break) {
                 break;
             }
-            result = evaluate(statement.getCondition());
+            if(increment != null){
+                evaluate(increment);
+            }
+            result = evaluate(condition);
         }
         return null;
     }

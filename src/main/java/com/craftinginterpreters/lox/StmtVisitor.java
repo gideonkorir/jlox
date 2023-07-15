@@ -7,5 +7,6 @@ public interface StmtVisitor<T> {
     T visitBlockStmt(Stmt.Block statement);
     T visitIfStmt(Stmt.If statement);
     T visitWhileStmt(Stmt.While statement);
+    T visitForStmt(Stmt.For statement);
     T visitKeywordStmt(Stmt.Keyword statement);
 }

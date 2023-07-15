@@ -83,6 +83,26 @@ public class AstPrinter implements ExprVisitor<String>, StmtVisitor<String> {
     }
 
     @Override
+    public String visitForStmt(Stmt.For statement) {
+        String init = statement.getInitializer() == null
+                ? ""
+                : statement.getInitializer().accept(this);
+        String cond = statement.getCondition() == null
+                ? ""
+                : statement.getCondition().accept(this);
+        String incr = statement.getIncrement() == null
+                ? ""
+                : statement.getIncrement().accept(this);
+        String body = statement.getBody().accept(this);
+        return String.format("for(%s; %s; %s){ %s }",
+                init,
+                cond,
+                incr,
+                body
+        );
+    }
+
+    @Override
     public String visitKeywordStmt(Stmt.Keyword statement) {
         return statement.getKeyword().name();
     }

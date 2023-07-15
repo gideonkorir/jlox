@@ -9,6 +9,8 @@ public class Parser {
     private final List<Token> tokens;
     private int current = 0;
 
+    private ParseContext parseContext =  ParseContext.DEFAULT;
+
     public Parser(List<Token> tokens) {
         super();
         this.tokens = tokens;
@@ -91,7 +93,9 @@ public class Parser {
         consume(LEFT_PAREN, "expected '(' for while statement condition.");
         Expr condition = expression();
         consume(RIGHT_PAREN, "Expected ')' for while statement condition");
+        parseContext = ParseContext.LOOP_BODY;
         Stmt body = statement();
+        parseContext = ParseContext.DEFAULT;
         return  new Stmt.While(condition, body);
     }
 
@@ -118,8 +122,15 @@ public class Parser {
             increment = expression();
         }
         consume(RIGHT_PAREN, "Expected ')' after for clause");
+        parseContext = ParseContext.LOOP_BODY;
         Stmt body = statement();
+        parseContext = ParseContext.DEFAULT;
+        return new Stmt.For(initializer, condition, increment, body);
 
+        /* Note: Decided against de sugaring for now so that I can implement continue on the for loop
+        // When I desugar, I can't find a good way to implement the continue statement, I need the increment
+        // to always be executed otherwise the loop just hangs because the loop variable isn't updated.
+        // I checked: https://stackoverflow.com/questions/14386679/how-to-use-the-statement-continue-in-while-loop#:~:text=Do%20your%20increment%20at%20the%20beginning%20instead%20of,or%20this%20doesn%27t%20really%20make%20much%20sense%20%7D
         //desugaring
         if (increment != null) {
             //if the increment isn't null then include the increment to the end
@@ -140,15 +151,21 @@ public class Parser {
             //the while loop.
             body = new Stmt.Block(Arrays.asList(initializer, body));
         }
-        return  body;
+        return  body;*/
     }
 
     private Stmt continueStmt(){
+        if(parseContext != ParseContext.LOOP_BODY) {
+            throw error(previous(), "The continue keyword is only allowed in the context of a loop");
+        }
         consume(SEMICOLON, "Semicolon required after continue statement");
         return new Stmt.Keyword(CONTINUE);
     }
 
     private Stmt breakStmt() {
+        if(parseContext != ParseContext.LOOP_BODY) {
+            throw error(previous(), "The break keyword is only allowed in the context of a loop");
+        }
         consume(SEMICOLON, "Semicolon required after break statement");
         return  new Stmt.Keyword(BREAK);
     }
@@ -375,4 +392,9 @@ public class Parser {
     }
 
     private static class ParseError extends RuntimeException {}
+
+    private static enum ParseContext{
+        DEFAULT,
+        LOOP_BODY
+    }
 }
