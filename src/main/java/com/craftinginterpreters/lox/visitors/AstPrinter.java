@@ -1,13 +1,10 @@
 package com.craftinginterpreters.lox.visitors;
 
+import com.craftinginterpreters.lox.*;
 import com.craftinginterpreters.lox.Expr.Binary;
 import com.craftinginterpreters.lox.Expr.Grouping;
 import com.craftinginterpreters.lox.Expr.Literal;
 import com.craftinginterpreters.lox.Expr.Unary;
-import com.craftinginterpreters.lox.Expr;
-import com.craftinginterpreters.lox.ExprVisitor;
-import com.craftinginterpreters.lox.Stmt;
-import com.craftinginterpreters.lox.StmtVisitor;
 
 public class AstPrinter implements ExprVisitor<String>, StmtVisitor<String> {
 
@@ -136,6 +133,70 @@ public class AstPrinter implements ExprVisitor<String>, StmtVisitor<String> {
                 expr.getLeft(),
                 expr.getRight()
                 );
+    }
+
+    @Override
+    public String visitAnonymousFunctionExpr(Expr.AnonymousFunction expr) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("<anon fn>(");
+        boolean started = false;
+        for (Token t : expr.getParams())
+        {
+            if(started) { builder.append(", "); }
+            builder.append(t.getLexeme());
+            if(!started) { started = true; }
+        }
+        builder.append(")");
+        return  builder.toString();
+    }
+
+    @Override
+    public String visitFunctionStmt(Stmt.Function statement) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("fun ")
+                .append(statement.getName().getLexeme())
+                .append("(");
+        int length = statement.getParams().size();
+        for(int i = 0; i< length; i++){
+            Token param = statement.getParams().get(i);
+            builder.append(param.getLexeme());
+            if(i < length - 1){
+                builder.append(", ");
+            }
+        }
+        builder.append(") { ").append(System.lineSeparator());
+        for (Stmt stmt: statement.getBody()) {
+            builder.append("\t");
+            builder.append(stmt.accept(this));
+            builder.append(System.lineSeparator());
+        }
+        builder.append("}");
+        return builder.toString();
+    }
+
+    @Override
+    public String visitReturnStmt(Stmt.Return stmt) {
+        if(stmt.getExpression() != null) {
+            return  "return " + stmt.getExpression().accept(this) + ";";
+        } else {
+            return  "return;";
+        }
+    }
+
+    @Override
+    public String visitCallExpr(Expr.Call expr) {
+        StringBuilder builder = new StringBuilder();
+        builder.append(expr.getCallee().accept(this))
+                .append('(');
+        for(int i=0; i<expr.getArguments().size(); i++) {
+            Expr arg = expr.getArguments().get(i);
+            builder.append(arg.accept(this));
+            if(i < expr.getArguments().size() - 1){
+                builder.append(", ");
+            }
+        }
+        builder.append(")");
+        return  builder.toString();
     }
 
     private String parenthesize(String name, Expr... exprs) {

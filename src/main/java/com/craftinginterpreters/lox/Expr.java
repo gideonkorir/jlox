@@ -4,6 +4,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
 
+import java.util.List;
+
 public abstract class Expr {
     
     public abstract ExprType getExprType();
@@ -132,6 +134,44 @@ public abstract class Expr {
         @Override
         public <R> R accept(ExprVisitor<R> visitor) {
             return visitor.visitLogicalExpr(this);
+        }
+    }
+
+    @Data
+    @RequiredArgsConstructor
+    @EqualsAndHashCode(callSuper = false)
+    public  static class Call extends  Expr {
+        private final Expr callee;
+        private final Token paren;
+        private final List<Expr> arguments;
+
+        @Override
+        public ExprType getExprType() {
+            return ExprType.CALL;
+        }
+
+        @Override
+        public <R> R accept(ExprVisitor<R> visitor) {
+            return visitor.visitCallExpr(this);
+        }
+    }
+
+    @Data
+    @RequiredArgsConstructor
+    @EqualsAndHashCode(callSuper = false)
+    public  static class AnonymousFunction extends  Expr {
+
+        private final List<Token> params;
+        private final List<Stmt> body;
+
+        @Override
+        public ExprType getExprType() {
+            return ExprType.ANONYMOUS_FUNCTION;
+        }
+
+        @Override
+        public <R> R accept(ExprVisitor<R> visitor) {
+            return visitor.visitAnonymousFunctionExpr(this);
         }
     }
 }
