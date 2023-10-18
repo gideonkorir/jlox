@@ -7,5 +7,7 @@ public enum ExprType {
     GROUPING,
     VARIABLE,
     ASSIGNMENT,
-    LOGICAL
+    LOGICAL,
+    CALL,
+    ANONYMOUS_FUNCTION
 }

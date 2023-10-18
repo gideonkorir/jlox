@@ -2,12 +2,35 @@ package com.craftinginterpreters.lox.visitors;
 
 import com.craftinginterpreters.lox.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 public class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
     private Environment environment = new Environment();
+    private Environment globals = environment;
+
+    public Interpreter(){
+        globals.define("clock", new LoxCallable() {
+            @Override
+            public int arity() {
+                return 0;
+            }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                return (double)System.currentTimeMillis() / 1000.0;
+            }
+
+            @Override
+            public String toString() { return "<native fn>"; }
+        });
+    }
     private LoopState loopState = LoopState.None;
+
+    public Environment getGlobals() {
+        return  globals;
+    }
     public void interpret(List<Stmt> statements) {
         try {
             for (Stmt statement : statements) {
@@ -60,7 +83,7 @@ public class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
         return  null;
     }
 
-    private void executeBlock(List<Stmt> statements,
+    void executeBlock(List<Stmt> statements,
                               Environment environment) {
         Environment previous = this.environment;
         try {
@@ -217,25 +240,31 @@ public class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
     }
 
     Void Loop(Stmt initializer, Expr condition, Expr increment, Stmt body){
-        if(initializer != null){
-            execute(initializer);
-        }
-
-        Object result = evaluate(condition);
-
-        while(isTruthy(result)){
-            execute(body);
-            LoopState current = loopState;
-            loopState = LoopState.None;
-            if(current == LoopState.Break) {
-                break;
+        Environment prevScope = this.environment;
+        this.environment = new Environment(prevScope);
+        try {
+            if (initializer != null) {
+                execute(initializer);
             }
-            if(increment != null){
-                evaluate(increment);
+
+            Object result = evaluate(condition);
+
+            while (isTruthy(result)) {
+                execute(body);
+                LoopState current = loopState;
+                loopState = LoopState.None;
+                if (current == LoopState.Break) {
+                    break;
+                }
+                if (increment != null) {
+                    evaluate(increment);
+                }
+                result = evaluate(condition);
             }
-            result = evaluate(condition);
+            return null;
+        } finally {
+            this.environment = prevScope;
         }
-        return null;
     }
 
     @Override
@@ -246,6 +275,54 @@ public class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
             loopState = LoopState.Continue;
         }
         return null;
+    }
+
+    @Override
+    public Object visitCallExpr(Expr.Call expr) {
+        Object callee = evaluate(expr.getCallee());
+        List<Object> args = new ArrayList<>(expr.getArguments().size());
+        for (Expr arg : expr.getArguments()) {
+            args.add(evaluate(arg));
+        }
+        if (!(callee instanceof LoxCallable)) {
+            throw new RuntimeError(expr.getParen(),
+                    "Can only call functions and classes.");
+        }
+        LoxCallable function = (LoxCallable) callee;
+        if (args.size() != function.arity()) {
+            throw new RuntimeError(expr.getParen(), "Expected " +
+                    function.arity() + " arguments but got " +
+                    args.size() + ".");
+        }
+        return  function.call(this, args);
+    }
+
+    @Override
+    public Void visitFunctionStmt(Stmt.Function statement) {
+        environment.define(
+                statement.getName().getLexeme(),
+                new LoxFunction(statement, environment)
+                );
+        return  null;
+    }
+
+    @Override
+    public Object visitAnonymousFunctionExpr(Expr.AnonymousFunction expr) {
+        //Create fake name
+        Token name = new Token(TokenType.IDENTIFIER, "anonymous", null, 1);
+        return new LoxFunction(
+                new Stmt.Function(name, expr.getParams(), expr.getBody()),
+                environment
+        );
+    }
+
+    @Override
+    public Void visitReturnStmt(Stmt.Return stmt) {
+        Object value = null;
+        if(stmt.getExpression() != null) {
+            value = stmt.getExpression().accept(this);
+        }
+        throw new ReturnException(value);
     }
 
     private static boolean isEqual(Object a, Object b) {

@@ -1,4 +1,8 @@
-package com.craftinginterpreters.lox;
+package com.craftinginterpreters.lox.visitors;
+
+import com.craftinginterpreters.lox.RuntimeError;
+import com.craftinginterpreters.lox.Token;
+import com.craftinginterpreters.lox.UnassignedValue;
 
 import java.util.HashMap;
 
@@ -54,5 +58,9 @@ public class Environment {
         } else {
             variables.replace(name.getLexeme(), value);
         }
+    }
+
+    public void define(String identifier, LoxCallable callable) {
+        variables.put(identifier, callable);
     }
 }

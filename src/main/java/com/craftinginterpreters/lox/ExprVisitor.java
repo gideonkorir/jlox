@@ -18,4 +18,8 @@ public interface ExprVisitor<R> {
     R visitAssignmentExpr(Expr.Assignment expr);
 
     R visitLogicalExpr(Expr.Logical expr);
+
+    R visitCallExpr(Expr.Call expr);
+
+    R visitAnonymousFunctionExpr(Expr.AnonymousFunction expr);
 }

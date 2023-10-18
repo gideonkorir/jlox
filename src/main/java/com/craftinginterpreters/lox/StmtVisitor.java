@@ -9,4 +9,6 @@ public interface StmtVisitor<T> {
     T visitWhileStmt(Stmt.While statement);
     T visitForStmt(Stmt.For statement);
     T visitKeywordStmt(Stmt.Keyword statement);
+    T visitFunctionStmt (Stmt.Function statement);
+    T visitReturnStmt(Stmt.Return stmt);
 }
