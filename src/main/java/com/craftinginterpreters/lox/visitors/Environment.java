@@ -46,6 +46,13 @@ public class Environment {
         return  value;
     }
 
+    public Object getAt(int distance, Token token) {
+        Environment envToUse = getAncestor(distance);
+        //Here the environment is trusting that the resolver class
+        //made sure the variable is there!. This is logical coupling :)
+        return  envToUse.variables.get(token.getLexeme());
+    }
+
     public void assign(Token name, Object value) {
         if(!variables.containsKey(name.getLexeme())) {
             if(_enclosingScope != null) {
@@ -58,6 +65,19 @@ public class Environment {
         } else {
             variables.replace(name.getLexeme(), value);
         }
+    }
+
+    public void assignAt(int distance, Token name, Object value) {
+        Environment envToUse = getAncestor(distance);
+        envToUse.variables.put(name.getLexeme(), value);
+    }
+
+    private Environment getAncestor(int distance) {
+        Environment envToUse = this;
+        for(int i=0; i<distance; i++){
+            envToUse = envToUse._enclosingScope;
+        }
+        return  envToUse;
     }
 
     public void define(String identifier, LoxCallable callable) {

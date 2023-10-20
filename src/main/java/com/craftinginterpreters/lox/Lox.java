@@ -11,6 +11,7 @@ import java.util.List;
 
 import com.craftinginterpreters.lox.visitors.AstPrinter;
 import com.craftinginterpreters.lox.visitors.Interpreter;
+import com.craftinginterpreters.lox.visitors.Resolver;
 
 /**
  * Hello world!
@@ -22,6 +23,7 @@ public class Lox
     private static boolean hadRuntimeError;
 
     private final static Interpreter interpreter = new Interpreter();
+    private final static Resolver resolver = new Resolver(interpreter);
 
     public static void main( String[] args ) throws IOException
     {
@@ -103,6 +105,10 @@ public class Lox
         List<Token> tokens = scanner.scanTokens();
         Parser parser = new Parser(tokens);
         List<Stmt> statements = parser.parse();
+        resolver.resolve(statements);
+        if(hadError) {
+            return;
+        }
         try {
             interpreter.interpret(statements);
         } catch (RuntimeError ignored) {
@@ -110,7 +116,11 @@ public class Lox
         }
     }
 
-    static void error(int line, String message) {
+    public static void error(String message) {
+        report(-1, "", message);
+    }
+
+    public static void error(int line, String message) {
         report(line, "", message);
     }
 
