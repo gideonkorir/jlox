@@ -2,13 +2,13 @@ package com.craftinginterpreters.lox.visitors;
 
 import com.craftinginterpreters.lox.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
     private Environment environment = new Environment();
-    private Environment globals = environment;
+    private final Environment globals = environment;
+
+    private final Map<Expr, Integer> locals = new HashMap<>();
 
     public Interpreter(){
         globals.define("clock", new LoxCallable() {
@@ -118,7 +118,7 @@ public class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
 
     @Override
     public Object visitVariableExpr(Expr.Variable expr) {
-        return  environment.get(expr.getName());
+        return  lookupVariable(expr.getName(), expr);
     }
 
     @Override
@@ -170,6 +170,8 @@ public class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
                     return l * r;
                 case SLASH:
                     return l / r;
+                case PERCENT:
+                    return l % r;
                 case LESS:
                     return l < r;
                 case LESS_EQUAL:
@@ -197,6 +199,12 @@ public class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
     @Override
     public Object visitAssignmentExpr(Expr.Assignment expr) {
         Object value = evaluate(expr.getExpression());
+        Integer distance = locals.get(expr);
+        if(distance != null) {
+            environment.assignAt(distance, expr.getIdentifier(), value);
+        } else {
+            globals.assign(expr.getIdentifier(), value);
+        }
         environment.assign(expr.getIdentifier(), value);
         return value;
     }
@@ -241,9 +249,9 @@ public class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
 
     Void Loop(Stmt initializer, Expr condition, Expr increment, Stmt body){
         Environment prevScope = this.environment;
-        this.environment = new Environment(prevScope);
         try {
             if (initializer != null) {
+                this.environment = new Environment(prevScope);
                 execute(initializer);
             }
 
@@ -349,6 +357,21 @@ public class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
         }
 
         return object.toString();
+    }
+
+    protected void resolve(Expr expr, int depth) {
+        locals.put(expr, depth);
+    }
+
+    private Object lookupVariable(Token name, Expr expr) {
+        Integer distance = locals.get(expr);
+        if(distance != null){
+            return environment.getAt(distance, name);
+        }
+        else {
+            return  globals.get(name);
+        }
+
     }
 
     private static enum LoopState {
