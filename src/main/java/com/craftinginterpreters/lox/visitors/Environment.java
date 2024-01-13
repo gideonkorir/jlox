@@ -83,4 +83,9 @@ public class Environment {
     public void define(String identifier, LoxCallable callable) {
         variables.put(identifier, callable);
     }
+
+    public void defineThis(LoxInstance instance)
+    {
+        variables.put("this", instance);
+    }
 }

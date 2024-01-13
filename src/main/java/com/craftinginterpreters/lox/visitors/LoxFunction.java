@@ -8,11 +8,13 @@ import java.util.List;
 public class LoxFunction implements LoxCallable {
     private final Stmt.Function function;
     private final Environment closure;
+    private final FunctionType functionType;
 
-    public LoxFunction(Stmt.Function function, Environment closure) {
+    public LoxFunction(Stmt.Function function, Environment closure, FunctionType functionType) {
 
         this.function = function;
         this.closure = closure;
+        this.functionType = functionType;
     }
 
     @Override
@@ -35,5 +37,12 @@ public class LoxFunction implements LoxCallable {
         }catch (ReturnException ex) {
             return  ex.getValue();
         }
+    }
+
+    public LoxFunction bind(LoxInstance instance)
+    {
+        Environment e = new Environment(closure);
+        e.defineThis(instance);
+        return  new LoxFunction(function, e, functionType);
     }
 }

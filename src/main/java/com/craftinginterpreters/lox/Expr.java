@@ -174,4 +174,61 @@ public abstract class Expr {
             return visitor.visitAnonymousFunctionExpr(this);
         }
     }
+
+    @Data
+    @RequiredArgsConstructor
+    @EqualsAndHashCode(callSuper = false)
+    public static class Get extends Expr
+    {
+        private final Expr operand;
+        private final Token member;
+
+        @Override
+        public ExprType getExprType() {
+            return ExprType.GET;
+        }
+
+        @Override
+        public <R> R accept(ExprVisitor<R> visitor) {
+            return visitor.visitGetExpr(this);
+        }
+    }
+
+    @Data
+    @RequiredArgsConstructor
+    @EqualsAndHashCode(callSuper = false)
+    public static class Set extends Expr
+    {
+        private final Expr operand;
+        private final Token member;
+        private final Expr value;
+
+        @Override
+        public ExprType getExprType() {
+            return ExprType.SET;
+        }
+
+        @Override
+        public <R> R accept(ExprVisitor<R> visitor) {
+            return visitor.visitSetExpr(this);
+        }
+    }
+
+    @Data
+    @RequiredArgsConstructor
+    @EqualsAndHashCode(callSuper = false)
+    public static class This extends Expr
+    {
+        private final Token keyword;
+
+        @Override
+        public ExprType getExprType() {
+            return ExprType.THIS;
+        }
+
+        @Override
+        public <R> R accept(ExprVisitor<R> visitor) {
+            return visitor.visitThisExpr(this);
+        }
+    }
 }

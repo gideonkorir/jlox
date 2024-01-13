@@ -11,4 +11,5 @@ public interface StmtVisitor<T> {
     T visitKeywordStmt(Stmt.Keyword statement);
     T visitFunctionStmt (Stmt.Function statement);
     T visitReturnStmt(Stmt.Return stmt);
+    T visitClassStmt(Stmt.Class stmt);
 }

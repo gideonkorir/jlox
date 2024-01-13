@@ -22,4 +22,9 @@ public interface ExprVisitor<R> {
     R visitCallExpr(Expr.Call expr);
 
     R visitAnonymousFunctionExpr(Expr.AnonymousFunction expr);
+
+    R visitGetExpr(Expr.Get expr);
+    R visitSetExpr(Expr.Set expr);
+
+    R visitThisExpr(Expr.This expr);
 }

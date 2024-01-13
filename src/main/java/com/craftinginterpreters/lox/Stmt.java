@@ -145,4 +145,17 @@ public abstract class Stmt {
             return visitor.visitReturnStmt(this);
         }
     }
+
+    @Data
+    @RequiredArgsConstructor
+    @EqualsAndHashCode(callSuper = false)
+    public static class Class extends Stmt {
+        private final Token name;
+        private final List<Function> methods;
+
+        @Override
+        public <T> T accept(StmtVisitor<T> visitor) {
+            return visitor.visitClassStmt(this);
+        }
+    }
 }
