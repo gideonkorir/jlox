@@ -40,8 +40,11 @@ public class Parser {
 
     private Stmt declaration() {
         try{
+            if(match(CLASS)) {
+                return classDeclaration();
+            }
             if(match(FUN)) {
-                return function("function");
+                return function("function", false);
             }
             else if(match(VAR)){
                 return varDeclaration();
@@ -53,10 +56,26 @@ public class Parser {
         }
     }
 
-    private Stmt.Function function(String kind) {
+    private Stmt classDeclaration() {
+        Token name = consume(IDENTIFIER, "Expected class name.");
+        consume(LEFT_BRACE, "Expected '{' before class body.");
+        List<Stmt.Function> methods = new ArrayList<>();
+        while(!check(RIGHT_BRACE) && !isAtEnd()) {
+            methods.add(function("method", true));
+        }
+        consume(RIGHT_BRACE, "Expected '}' after class body.");
+        return  new Stmt.Class(name, methods);
+    }
+
+    private Stmt.Function function(String kind, boolean isStaticEnabled) {
+        boolean isStatic = match(CLASS);
+        if(isStatic && !isStaticEnabled)
+        {
+            throw error(peek(), "static " + kind + " not allowed in current context");
+        }
         Token name = consume(IDENTIFIER, "Expect " + kind + " name.");
         FunctionDetail detail = getFunctionDetail(kind);
-        return  new Stmt.Function(name, detail.getParams(), detail.getBody());
+        return  new Stmt.Function(name, detail.getParams(), detail.getBody(), isStatic);
     }
 
     private FunctionDetail getFunctionDetail(String kind) {
@@ -260,11 +279,14 @@ public class Parser {
 
         if (match(EQUAL)) {
             Token equals = previous();
-            Expr value = assignment();
+            Expr value = expression();
 
             if (expr instanceof Expr.Variable) {
                 Token name = ((Expr.Variable)expr).getName();
                 return new Expr.Assignment(name, value);
+            } else if(expr instanceof Expr.Get) {
+                Expr.Get get = (Expr.Get)expr;
+                return new Expr.Set(get.getOperand(), get.getMember(), value);
             }
 
             throw error(equals, "Invalid assignment target.");
@@ -347,6 +369,9 @@ public class Parser {
         while(true) {
             if(match(LEFT_PAREN)){
                 expr = finishCall(expr);
+            } else if(match(DOT)) {
+                Token name = consume(IDENTIFIER, "Expected identifier after '.'.");
+                expr = new Expr.Get(expr, name);
             } else {
                 break;
             }
@@ -373,6 +398,7 @@ public class Parser {
         if(match(FALSE)) return new Expr.Literal(false);
         if(match(TRUE)) return new Expr.Literal(true);
         if(match(NIL)) return new  Expr.Literal(null);
+        if(match(THIS)) return new Expr.This(previous());
 
         if(match(NUMBER, STRING)) {
             return new Expr.Literal(previous().getLiteral());

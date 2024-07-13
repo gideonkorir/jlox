@@ -185,10 +185,10 @@ public class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
             }
         }
 
-        boolean isStrings = left instanceof String && right instanceof String;
-        if(isStrings && type == TokenType.PLUS)
+        boolean isConcat = left instanceof String;
+        if(isConcat && type == TokenType.PLUS)
         {
-            return ((String)left) + ((String)right);
+            return ((String)left) + right.toString();
         }
 
         throw new RuntimeError(expr.getOperator(),
@@ -225,6 +225,35 @@ public class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
                 return  false;
             }
         }
+    }
+
+    @Override
+    public Object visitGetExpr(Expr.Get expr) {
+        Object object = evaluate(expr.getOperand());
+        if(object instanceof LoxInstance){
+            LoxInstance loxInstance = (LoxInstance) object;
+            return loxInstance.get(expr.getMember());
+        } else if(object instanceof  LoxClass) {
+            LoxClass c = (LoxClass) object;
+            return  c.findMethod(expr.getMember().getLexeme());
+        }
+        throw new RuntimeError(expr.getMember(), "Only instances have properties.");
+    }
+
+    @Override
+    public Object visitSetExpr(Expr.Set expr) {
+        Object object = evaluate(expr.getOperand());
+        if(object instanceof LoxInstance){
+            LoxInstance loxInstance = (LoxInstance) object;
+            Object value = evaluate(expr.getValue());
+            return loxInstance.set(expr.getMember(), value);
+        }
+        throw new RuntimeError(expr.getMember(), "Only instances have properties.");
+    }
+
+    @Override
+    public Object visitThisExpr(Expr.This expr) {
+        return lookupVariable(expr.getKeyword(), expr);
     }
 
     @Override
@@ -306,10 +335,28 @@ public class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
     }
 
     @Override
+    public Void visitClassStmt(Stmt.Class stmt) {
+        environment.define(stmt.getName().getLexeme(), null);
+        Map<String, LoxFunction> methods = new HashMap<>();
+        for(Stmt.Function method : stmt.getMethods())
+        {
+            FunctionType functionType = method.getName().getLexeme().equals("init")
+                    ? FunctionType.INITIALIZER
+                    : FunctionType.METHOD;
+
+            LoxFunction fn = new LoxFunction(method, environment, functionType);
+            methods.put(method.getName().getLexeme(), fn);
+        }
+        LoxClass klass = new LoxClass(stmt.getName().getLexeme(), methods);
+        environment.assign(stmt.getName(), klass);
+        return  null;
+    }
+
+    @Override
     public Void visitFunctionStmt(Stmt.Function statement) {
         environment.define(
                 statement.getName().getLexeme(),
-                new LoxFunction(statement, environment)
+                new LoxFunction(statement, environment, FunctionType.NAMED)
                 );
         return  null;
     }
@@ -319,8 +366,9 @@ public class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
         //Create fake name
         Token name = new Token(TokenType.IDENTIFIER, "anonymous", null, 1);
         return new LoxFunction(
-                new Stmt.Function(name, expr.getParams(), expr.getBody()),
-                environment
+                new Stmt.Function(name, expr.getParams(), expr.getBody(), false),
+                environment,
+                FunctionType.ANONYMOUS
         );
     }
 

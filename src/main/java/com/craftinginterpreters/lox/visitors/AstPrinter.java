@@ -6,6 +6,8 @@ import com.craftinginterpreters.lox.Expr.Grouping;
 import com.craftinginterpreters.lox.Expr.Literal;
 import com.craftinginterpreters.lox.Expr.Unary;
 
+import javax.sound.midi.SysexMessage;
+
 public class AstPrinter implements ExprVisitor<String>, StmtVisitor<String> {
 
     public String print(Expr expr) {
@@ -197,6 +199,38 @@ public class AstPrinter implements ExprVisitor<String>, StmtVisitor<String> {
         }
         builder.append(")");
         return  builder.toString();
+    }
+
+    @Override
+    public String visitClassStmt(Stmt.Class stmt) {
+        StringBuilder builder = new StringBuilder();
+        builder.append(stmt.getName().getLexeme());
+        builder.append(" {");
+        builder.append(System.lineSeparator());
+        for (Stmt.Function fn: stmt.getMethods()) {
+            String fnText = fn.accept(this);
+            builder.append(fnText).append(System.lineSeparator());
+        }
+        builder.append("}");
+        return builder.toString();
+    }
+
+    @Override
+    public String visitGetExpr(Expr.Get expr) {
+        String operand = expr.getOperand().accept(this);
+        return  operand + "." + expr.getMember().getLexeme();
+    }
+
+    @Override
+    public String visitSetExpr(Expr.Set expr) {
+        String operand = expr.getOperand().accept(this);
+        String value = expr.getValue().accept(this);
+        return  operand + "." + expr.getMember().getLexeme() + " = " + value;
+    }
+
+    @Override
+    public String visitThisExpr(Expr.This expr) {
+        return "this";
     }
 
     private String parenthesize(String name, Expr... exprs) {

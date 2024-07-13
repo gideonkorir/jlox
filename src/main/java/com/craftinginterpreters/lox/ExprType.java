@@ -9,5 +9,8 @@ public enum ExprType {
     ASSIGNMENT,
     LOGICAL,
     CALL,
-    ANONYMOUS_FUNCTION
+    ANONYMOUS_FUNCTION,
+    GET,
+    SET,
+    THIS
 }

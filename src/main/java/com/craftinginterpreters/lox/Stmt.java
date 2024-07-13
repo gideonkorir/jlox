@@ -126,6 +126,7 @@ public abstract class Stmt {
         private final Token name;
         private final List<Token> params;
         private final List<Stmt> body;
+        private final boolean isStatic;
         @Override
         public <T> T accept(StmtVisitor<T> visitor) {
             return visitor.visitFunctionStmt(this);
@@ -143,6 +144,34 @@ public abstract class Stmt {
         @Override
         public <T> T accept(StmtVisitor<T> visitor) {
             return visitor.visitReturnStmt(this);
+        }
+    }
+
+    @Data
+    @RequiredArgsConstructor
+    @EqualsAndHashCode(callSuper = false)
+    public static class Class extends Stmt {
+        private final Token name;
+        private final List<Function> methods;
+
+        @Override
+        public <T> T accept(StmtVisitor<T> visitor) {
+            return visitor.visitClassStmt(this);
+        }
+    }
+
+    @Data
+    @RequiredArgsConstructor
+    @EqualsAndHashCode(callSuper = false)
+    public static class Property extends Stmt {
+
+        private final Token name;
+        private final List<Stmt> getter;
+        private final List<Stmt> setter;
+        private final boolean isStatic;
+        @Override
+        public <T> T accept(StmtVisitor<T> visitor) {
+            throw new RuntimeException("Not implemented");
         }
     }
 }
