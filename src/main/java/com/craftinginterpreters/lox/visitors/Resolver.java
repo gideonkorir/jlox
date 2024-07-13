@@ -338,10 +338,14 @@ public class Resolver implements ExprVisitor<Void>, StmtVisitor<Void> {
         }
 
         public static int[] getFunctionContextOps(FunctionType functionType) {
-            if (Objects.requireNonNull(functionType) == FunctionType.METHOD || functionType == FunctionType.INITIALIZER) {
-                return CLASS_FUNCTION_CONTEXT_OPS;
+            switch (functionType)
+            {
+                case METHOD:
+                case INITIALIZER:
+                    return CLASS_FUNCTION_CONTEXT_OPS;
+                default:
+                    return FUNCTION_CONTEXT_OPS;
             }
-            return FUNCTION_CONTEXT_OPS;
         }
 
         public static boolean has(int[] values, int value)

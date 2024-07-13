@@ -5,14 +5,14 @@ import java.util.Map;
 
 public class LoxClass implements LoxCallable{
     final String name;
-    final Map<String, LoxFunction> methods;
+    final Map<String, LoxFunction> functions;
     final LoxFunction init;
 
-    public LoxClass(String name, Map<String, LoxFunction> methods)
+    public LoxClass(String name, Map<String, LoxFunction> functions)
     {
         this.name = name;
-        this.methods = methods;
-        init = methods.getOrDefault("init", null);
+        this.functions = functions;
+        init = (LoxFunction) functions.getOrDefault("init", null);
     }
 
     public String getName() {
@@ -40,8 +40,8 @@ public class LoxClass implements LoxCallable{
     }
 
     public LoxFunction findMethod(String name) {
-        if (methods.containsKey(name)) {
-            return methods.get(name);
+        if (functions.containsKey(name)) {
+            return(LoxFunction) functions.get(name);
         }
 
         return null;

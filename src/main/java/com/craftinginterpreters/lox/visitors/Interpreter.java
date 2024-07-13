@@ -233,6 +233,9 @@ public class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
         if(object instanceof LoxInstance){
             LoxInstance loxInstance = (LoxInstance) object;
             return loxInstance.get(expr.getMember());
+        } else if(object instanceof  LoxClass) {
+            LoxClass c = (LoxClass) object;
+            return  c.findMethod(expr.getMember().getLexeme());
         }
         throw new RuntimeError(expr.getMember(), "Only instances have properties.");
     }
@@ -363,7 +366,7 @@ public class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
         //Create fake name
         Token name = new Token(TokenType.IDENTIFIER, "anonymous", null, 1);
         return new LoxFunction(
-                new Stmt.Function(name, expr.getParams(), expr.getBody()),
+                new Stmt.Function(name, expr.getParams(), expr.getBody(), false),
                 environment,
                 FunctionType.ANONYMOUS
         );

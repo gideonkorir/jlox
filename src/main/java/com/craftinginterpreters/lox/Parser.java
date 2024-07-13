@@ -44,7 +44,7 @@ public class Parser {
                 return classDeclaration();
             }
             if(match(FUN)) {
-                return function("function");
+                return function("function", false);
             }
             else if(match(VAR)){
                 return varDeclaration();
@@ -61,16 +61,21 @@ public class Parser {
         consume(LEFT_BRACE, "Expected '{' before class body.");
         List<Stmt.Function> methods = new ArrayList<>();
         while(!check(RIGHT_BRACE) && !isAtEnd()) {
-            methods.add(function("method"));
+            methods.add(function("method", true));
         }
         consume(RIGHT_BRACE, "Expected '}' after class body.");
         return  new Stmt.Class(name, methods);
     }
 
-    private Stmt.Function function(String kind) {
+    private Stmt.Function function(String kind, boolean isStaticEnabled) {
+        boolean isStatic = match(CLASS);
+        if(isStatic && !isStaticEnabled)
+        {
+            throw error(peek(), "static " + kind + " not allowed in current context");
+        }
         Token name = consume(IDENTIFIER, "Expect " + kind + " name.");
         FunctionDetail detail = getFunctionDetail(kind);
-        return  new Stmt.Function(name, detail.getParams(), detail.getBody());
+        return  new Stmt.Function(name, detail.getParams(), detail.getBody(), isStatic);
     }
 
     private FunctionDetail getFunctionDetail(String kind) {
